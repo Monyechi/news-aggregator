@@ -1,21 +1,30 @@
 import { NextResponse } from "next/server";
-import { Configuration, OpenAIApi } from "openai";
+import { OpenAI } from "openai";
 
-const config = new Configuration({
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-const openai = new OpenAIApi(config);
 
 export async function POST(request: Request) {
   try {
     const { text } = await request.json();
-    const completion = await openai.createCompletion({
+
+    // For a "text-davinci-003" style completion:
+    const completion = await openai.completions.create({
       model: "text-davinci-003",
       prompt: `Summarize this article in bullet points:\n\n${text}\n`,
       max_tokens: 150,
     });
-    return NextResponse.json({ summary: completion.data.choices[0].text });
+
+    // Access the result
+    const summary = completion.choices[0].text;
+
+    return NextResponse.json({ summary });
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    // By default, 'error' is 'unknown'. You can do a type check or cast:
+    if (error instanceof Error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ error: "An unknown error occurred" }, { status: 500 });
   }
 }
